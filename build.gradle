@@ -1,0 +1,56 @@
+plugins {
+    id 'java-library'
+    id 'maven-publish'
+    id 'signing'
+    id("io.github.gradle-nexus.publish-plugin") version "1.3.0"
+}
+
+group = 'io.github.tongbora'
+version = '1.0.0'
+description = 'bakong-spring-boot-starter'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    withSourcesJar()
+    withJavadocJar()
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    // Import Spring Boot dependency versions
+    implementation platform("org.springframework.boot:spring-boot-dependencies:3.3.5")
+
+    // Spring
+    implementation 'org.springframework:spring-web'
+    implementation 'org.springframework.boot:spring-boot-autoconfigure'
+
+    // Config metadata
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    // Bakong SDK
+    implementation 'kh.gov.nbc.bakong_khqr:sdk-java:1.0.0.16'
+
+    // QR generation
+    implementation 'com.google.zxing:core:3.5.3'
+    implementation 'com.google.zxing:javase:3.5.3'
+
+    // Jackson
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+    // Lombok
+    compileOnly 'org.projectlombok:lombok:1.18.30'
+    annotationProcessor 'org.projectlombok:lombok:1.18.30'
+
+    // Tests
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
