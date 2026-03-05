@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'io.github.tongbora'
-version = '1.0.2'
+version = '1.0.3'
 description = 'Bakong KHQR Spring Boot Starter'
 
 java {
@@ -23,22 +23,21 @@ repositories {
 
 dependencies {
 
-    implementation platform("org.springframework.boot:spring-boot-dependencies:3.3.5")
-
-    implementation 'org.springframework:spring-web'
-    implementation 'org.springframework.boot:spring-boot-autoconfigure'
-
+    compileOnly platform("org.springframework.boot:spring-boot-dependencies:3.3.5")
+    compileOnly 'org.springframework:spring-web'
+    compileOnly 'org.springframework.boot:spring-boot-autoconfigure'
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor:3.3.5'
 
     api 'kh.gov.nbc.bakong_khqr:sdk-java:1.0.0.16'
+
     implementation 'com.google.zxing:core:3.5.3'
     implementation 'com.google.zxing:javase:3.5.3'
-    implementation 'com.fasterxml.jackson.core:jackson-databind'
+
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
 
     implementation 'jakarta.validation:jakarta.validation-api:3.0.2'
 
-    implementation 'org.slf4j:slf4j-api'
-
+    compileOnly 'org.slf4j:slf4j-api'
     compileOnly 'org.projectlombok:lombok:1.18.30'
     annotationProcessor 'org.projectlombok:lombok:1.18.30'
 
