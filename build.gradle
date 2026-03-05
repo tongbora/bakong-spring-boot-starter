@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'io.github.tongbora'
-version = '1.0.0'
+version = '1.0.2'
 description = 'Bakong KHQR Spring Boot Starter'
 
 java {
@@ -30,7 +30,7 @@ dependencies {
 
     annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor:3.3.5'
 
-    implementation 'kh.gov.nbc.bakong_khqr:sdk-java:1.0.0.16'
+    api 'kh.gov.nbc.bakong_khqr:sdk-java:1.0.0.16'
     implementation 'com.google.zxing:core:3.5.3'
     implementation 'com.google.zxing:javase:3.5.3'
     implementation 'com.fasterxml.jackson.core:jackson-databind'
