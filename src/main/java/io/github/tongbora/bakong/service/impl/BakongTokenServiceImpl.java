@@ -4,47 +4,49 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.tongbora.bakong.config.BakongProperties;
 import io.github.tongbora.bakong.service.BakongTokenService;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.*;
-import org.springframework.web.client.RestTemplate;
-
+import org.springframework.http.MediaType;
+import org.springframework.web.client.RestClient;
 
 import java.time.Instant;
 import java.util.Map;
 
-@RequiredArgsConstructor
 @Slf4j
 public class BakongTokenServiceImpl implements BakongTokenService {
 
-    private final RestTemplate restTemplate;
+    private final RestClient restClient;
     private final ObjectMapper mapper;
     private final BakongProperties properties;
 
     private String cachedToken;
     private Instant tokenExpiry;
 
+    public BakongTokenServiceImpl(RestClient restClient, ObjectMapper mapper, BakongProperties properties) {
+        this.restClient = restClient;
+        this.mapper = mapper;
+        this.properties = properties;
+    }
+
     @Override
     public synchronized String getToken() {
         if (cachedToken != null && tokenExpiry != null && Instant.now().isBefore(tokenExpiry)) {
+            log.info("Using cached token");
             return cachedToken;
         }
 
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
+        log.info("Renewing token from Bakong");
 
-        HttpEntity<Map<String, String>> entity =
-                new HttpEntity<>(Map.of("email", properties.getEmail()), headers);
+        String url = properties.getBaseUrl().replaceAll("/+$", "") + "/v1/renew_token";
 
-        ResponseEntity<String> response = restTemplate.exchange(
-                properties.getBaseUrl().replaceAll("/+$", "") + "/v1/renew_token",
-                HttpMethod.POST,
-                entity,
-                String.class
-        );
+        String responseBody = restClient.post()
+                .uri(url)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("email", properties.getEmail()))
+                .retrieve()
+                .body(String.class);
 
         try {
-            JsonNode root = mapper.readTree(response.getBody());
+            JsonNode root = mapper.readTree(responseBody);
             JsonNode tokenNode = root.path("data").path("token");
 
             if (tokenNode.isMissingNode() || tokenNode.isNull()) {
@@ -59,6 +61,8 @@ public class BakongTokenServiceImpl implements BakongTokenService {
 
             long exp = payloadNode.path("exp").asLong();
             tokenExpiry = Instant.ofEpochSecond(exp);
+
+            log.info("Obtained new token, expires at {}", tokenExpiry);
 
             return cachedToken;
 
