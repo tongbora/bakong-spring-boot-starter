@@ -115,7 +115,6 @@ public class BakongServiceImpl implements BakongService {
                 entity,
                 String.class
         );
-//        log.info("Data response from Bakong API: {}", upstream);
 
         try {
             // Deserialize data into BakongResponse

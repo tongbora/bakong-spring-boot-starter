@@ -2,12 +2,12 @@ plugins {
     id 'java-library'
     id 'maven-publish'
     id 'signing'
-    id("io.github.gradle-nexus.publish-plugin") version "1.3.0"
+    id("io.github.gradle-nexus.publish-plugin") version "2.0.0"
 }
 
 group = 'io.github.tongbora'
 version = '1.0.0'
-description = 'bakong-spring-boot-starter'
+description = 'Bakong KHQR Spring Boot Starter'
 
 java {
     toolchain {
@@ -23,34 +23,74 @@ repositories {
 
 dependencies {
 
-    // Import Spring Boot dependency versions
     implementation platform("org.springframework.boot:spring-boot-dependencies:3.3.5")
 
-    // Spring
     implementation 'org.springframework:spring-web'
     implementation 'org.springframework.boot:spring-boot-autoconfigure'
 
-    // Config metadata
-    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+    annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor:3.3.5'
 
-    // Bakong SDK
     implementation 'kh.gov.nbc.bakong_khqr:sdk-java:1.0.0.16'
-
-    // QR generation
     implementation 'com.google.zxing:core:3.5.3'
     implementation 'com.google.zxing:javase:3.5.3'
-
-    // Jackson
     implementation 'com.fasterxml.jackson.core:jackson-databind'
 
-    // Lombok
+    implementation 'jakarta.validation:jakarta.validation-api:3.0.2'
+
+    implementation 'org.slf4j:slf4j-api'
+
     compileOnly 'org.projectlombok:lombok:1.18.30'
     annotationProcessor 'org.projectlombok:lombok:1.18.30'
 
-    // Tests
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
-tasks.named('test') {
-    useJUnitPlatform()
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            pom {
+                name = 'bakong-spring-boot-starter'
+                description = 'Spring Boot Starter for Bakong KHQR payment integration'
+                url = 'https://github.com/tongbora/bakong-spring-boot-starter'
+
+                licenses {
+                    license {
+                        name = 'MIT License'
+                        url = 'https://opensource.org/licenses/MIT'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id = 'tongbora'
+                        name = 'Tong Bora'
+                        email = 'tongbora.official@gmail.com'
+                    }
+                }
+
+                scm {
+                    connection = 'scm:git:git://github.com/tongbora/bakong-spring-boot-starter.git'
+                    developerConnection = 'scm:git:ssh://github.com/tongbora/bakong-spring-boot-starter.git'
+                    url = 'https://github.com/tongbora/bakong-spring-boot-starter'
+                }
+            }
+        }
+    }
+}
+
+signing {
+    sign publishing.publications.mavenJava
+}
+
+nexusPublishing {
+    repositories {
+        sonatype {
+            nexusUrl.set(uri("https://ossrh-staging-api.central.sonatype.com/service/local/"))
+            snapshotRepositoryUrl.set(uri("https://central.sonatype.com/repository/maven-snapshots/"))
+            username = findProperty("sonatype.username")
+            password = findProperty("sonatype.password")
+        }
+    }
 }

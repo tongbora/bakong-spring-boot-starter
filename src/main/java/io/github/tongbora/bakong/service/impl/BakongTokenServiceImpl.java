@@ -27,11 +27,8 @@ public class BakongTokenServiceImpl implements BakongTokenService {
     @Override
     public synchronized String getToken() {
         if (cachedToken != null && tokenExpiry != null && Instant.now().isBefore(tokenExpiry)) {
-//            log.info("Using cached token");
             return cachedToken;
         }
-
-//        log.info("Renewing token from Bakong");
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -62,8 +59,6 @@ public class BakongTokenServiceImpl implements BakongTokenService {
 
             long exp = payloadNode.path("exp").asLong();
             tokenExpiry = Instant.ofEpochSecond(exp);
-
-//            log.info("Obtained new token, expires at {}", tokenExpiry);
 
             return cachedToken;
 
