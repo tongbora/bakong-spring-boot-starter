@@ -26,7 +26,6 @@ public record BakongRequest(
         merchantCity = merchantCity == null ? "PHNOM PENH" : merchantCity;
         merchantId = merchantId == null ? "DEFAULT MERCHANT ID" : merchantId;
         acquiringBank = acquiringBank == null ? "DEFAULT BANK" : acquiringBank;
-        upiAccountInformation = upiAccountInformation == null ? "UPI123456" : upiAccountInformation;
         expirationTimestamp = expirationTimestamp == null ? 15 : expirationTimestamp;
         billNumber = billNumber == null ? "BILL123456" : billNumber;
         storeLabel = storeLabel == null ? "STORE" : storeLabel;

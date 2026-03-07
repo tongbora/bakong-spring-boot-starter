@@ -78,6 +78,7 @@ public class BakongServiceImpl implements BakongService {
             Map<EncodeHintType, Object> hints = new HashMap<>();
             hints.put(EncodeHintType.CHARACTER_SET, StandardCharsets.UTF_8.name());
             hints.put(EncodeHintType.ERROR_CORRECTION, ErrorCorrectionLevel.H);
+            hints.put(EncodeHintType.MARGIN, 1);
 
             BitMatrix bitMatrix = qrCodeWriter.encode(qr.getQr(), BarcodeFormat.QR_CODE, 300, 300, hints);
             ByteArrayOutputStream pngOutputStream = new ByteArrayOutputStream();

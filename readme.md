@@ -36,7 +36,7 @@ Before using this starter, you need to:
 
 ```groovy
 dependencies {
-    implementation 'io.github.tongbora:bakong-spring-boot-starter:1.0.6'
+    implementation 'io.github.tongbora:bakong-spring-boot-starter:1.0.7'
 }
 ```
 
@@ -46,7 +46,7 @@ dependencies {
 <dependency>
     <groupId>io.github.tongbora</groupId>
     <artifactId>bakong-spring-boot-starter</artifactId>
-    <version>1.0.6</version>
+    <version>1.0.7</version>
 </dependency>
 ```
 
@@ -120,22 +120,22 @@ public class PaymentController {
 
 ```java
 public record BakongRequest(
-        KHQRCurrency currency,                       // default: KHR
-        Double amount,                               // REQUIRED
-        String merchantName,                         // default: "DEFAULT MERCHANT"
-        String merchantCity,                         // default: "PHNOM PENH"
-        String merchantId,                           // default: "DEFAULT MERCHANT ID"
-        String acquiringBank,                        // default: "DEFAULT BANK"
-        String upiAccountInformation,               // default: "UPI123456"
-        Integer expirationTimestamp,                // default: 15 minutes
-        String billNumber,                           // default: "BILL123456"
-        String storeLabel,                           // default: "STORE"
-        String terminalLabel,                        // default: "TERMINAL1"
-        String mobileNumber,                         // default: "012345678"
-        String purposeOfTransaction,                // default: "Payment"
-        String merchantAlternateLanguagePreference, // default: "km"
-        String merchantNameAlternateLanguage,       // default: "អ្នកលក់"
-        String merchantCityAlternateLanguage        // default: "ភ្នំពេញ"
+    KHQRCurrency currency,                       // default: KHR
+    Double amount,                               // REQUIRED
+    String merchantName,                         // default: "DEFAULT MERCHANT"
+    String merchantCity,                         // default: "PHNOM PENH"
+    String merchantId,                           // default: "DEFAULT MERCHANT ID"
+    String acquiringBank,                        // default: "DEFAULT BANK"
+    String upiAccountInformation,                // optional, no default — only supported with KHR
+    Integer expirationTimestamp,                 // default: 15 minutes
+    String billNumber,                           // default: "BILL123456"
+    String storeLabel,                           // default: "STORE"
+    String terminalLabel,                        // default: "TERMINAL1"
+    String mobileNumber,                         // default: "012345678"
+    String purposeOfTransaction,                 // default: "Payment"
+    String merchantAlternateLanguagePreference,  // default: "km"
+    String merchantNameAlternateLanguage,        // default: "អ្នកលក់"
+    String merchantCityAlternateLanguage         // default: "ភ្នំពេញ"
 )
 ```
 
@@ -155,7 +155,7 @@ public record BakongRequest(
 | `terminalLabel` | `String` | No | `"TERMINAL1"` | Terminal identifier |
 | `purposeOfTransaction` | `String` | No | `"Payment"` | Payment description |
 | `expirationTimestamp` | `Integer` | No | `15` | QR validity in **minutes** |
-| `upiAccountInformation` | `String` | No | `"UPI123456"` | UPI account info |
+| `upiAccountInformation` | `String` | No | `null` | UPI account info — ⚠️ only supported with `KHR`, set to `null` when using `USD` |
 | `merchantAlternateLanguagePreference` | `String` | No | `"km"` | Alternate language code |
 | `merchantNameAlternateLanguage` | `String` | No | `"អ្នកលក់"` | Merchant name in Khmer |
 | `merchantCityAlternateLanguage` | `String` | No | `"ភ្នំពេញ"` | City name in Khmer |
@@ -209,7 +209,7 @@ Content-Type: application/json
     "terminalLabel": "Counter 1",
     "purposeOfTransaction": "Coffee Payment",
     "expirationTimestamp": 15,
-    "upiAccountInformation": "KH123456789",
+    "upiAccountInformation": "KH123456789", // only supported with KHR currency, set to null when using USD
     "merchantAlternateLanguagePreference": "km",
     "merchantNameAlternateLanguage": "ហាងកាហ្វេខ្ញុំ",
     "merchantCityAlternateLanguage": "សៀមរាប"
@@ -327,8 +327,8 @@ You can customize the expiration per request using the `expirationTimestamp` fie
 
 ```json
 {
-  "amount": 1.50,
-  "expirationTimestamp": 15
+    "amount": 1.50,
+    "expirationTimestamp": 15
 }
 ```
 
@@ -357,6 +357,7 @@ You can customize the expiration per request using the `expirationTimestamp` fie
 
 - **Production Restriction:** The `check-transaction` endpoint can only be called from servers **located in Cambodia** in production. Calls from servers outside Cambodia will be blocked by Bakong.
 - **Currency:** Pass `"USD"` or `"KHR"` in the `currency` field. Defaults to `KHR` if not provided.
+- **UPI Account Information:** `upiAccountInformation` is only supported when `currency` is `KHR`. If you use `USD`, leave `upiAccountInformation` as `null` — otherwise the KHQR SDK will throw an error: `KHQR does not support UPI Account Information with USD currency`.
 - **Bean Override:** To customize behavior, declare your own `@Bean` of type `BakongService` or `BakongTokenService` — the starter uses `@ConditionalOnMissingBean` and will back off automatically.
 - **Branding Compliance:** When displaying KHQR in any customer-facing UI, always follow the official [KHQR Card Guideline](https://bakong.nbc.gov.kh/en/download/KHQR/guideline/KHQR%20Card%20Guideline.pdf).
 
