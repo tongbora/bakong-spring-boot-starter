@@ -36,7 +36,7 @@ Before using this starter, you need to:
 
 ```groovy
 dependencies {
-    implementation 'io.github.tongbora:bakong-spring-boot-starter:1.0.5'
+    implementation 'io.github.tongbora:bakong-spring-boot-starter:1.0.6'
 }
 ```
 
@@ -46,7 +46,7 @@ dependencies {
 <dependency>
     <groupId>io.github.tongbora</groupId>
     <artifactId>bakong-spring-boot-starter</artifactId>
-    <version>1.0.5</version>
+    <version>1.0.6</version>
 </dependency>
 ```
 

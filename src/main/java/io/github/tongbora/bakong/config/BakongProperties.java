@@ -13,6 +13,18 @@ public class BakongProperties {
         return accountId;
     }
 
+    public void setAccountId(String accountId) {
+        this.accountId = accountId;
+    }
+
+    public void setBaseUrl(String baseUrl) {
+        this.baseUrl = baseUrl;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
     public String getBaseUrl() {
         return baseUrl;
     }

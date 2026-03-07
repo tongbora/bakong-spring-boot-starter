@@ -6,7 +6,7 @@ plugins {
 }
 
 group = 'io.github.tongbora'
-version = '1.0.5'
+version = '1.0.6'
 description = 'Bakong KHQR Spring Boot Starter'
 
 java {
@@ -44,7 +44,7 @@ publishing {
 
             pom {
                 name = 'bakong-spring-boot-starter'
-                description = 'Spring Boot Starter for Bakong KHQR payment integration'
+                description = 'A Spring Boot Starter for integrating with the Bakong Open API and KHQR SDK — Cambodia\'s official QR payment system developed by the National Bank of Cambodia (NBC).'
                 url = 'https://github.com/tongbora/bakong-spring-boot-starter'
 
                 licenses {
