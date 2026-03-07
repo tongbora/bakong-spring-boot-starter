@@ -12,6 +12,8 @@ A **Spring Boot Starter** for integrating with the **Bakong Open API** and **KHQ
 - [Installation](#installation)
 - [Configuration](#configuration)
 - [Usage](#usage)
+- [BakongRequest Fields](#bakongrequest-fields)
+- [Payment Flow](#payment-flow)
 - [Token Auto-Renewal](#token-auto-renewal)
 - [QR Expiration](#qr-expiration)
 - [Resources & Documentation](#resources--documentation)
@@ -34,7 +36,7 @@ Before using this starter, you need to:
 
 ```groovy
 dependencies {
-    implementation 'io.github.tongbora:bakong-spring-boot-starter:1.0.0'
+    implementation 'io.github.tongbora:bakong-spring-boot-starter:1.0.5'
 }
 ```
 
@@ -44,7 +46,7 @@ dependencies {
 <dependency>
     <groupId>io.github.tongbora</groupId>
     <artifactId>bakong-spring-boot-starter</artifactId>
-    <version>1.0.0</version>
+    <version>1.0.5</version>
 </dependency>
 ```
 
@@ -54,17 +56,13 @@ dependencies {
 
 ## Configuration
 
-Add the following to your `application.yml`:
+The only required config is your Bakong account credentials. Add to `application.yml`:
 
 ```yaml
 bakong:
   base-url: https://api-bakong.nbc.gov.kh
   email: your_registered_email@example.com
   account-id: your_bakong_id@bank
-  acquiring-bank: your_acquiring_bank_code
-  merchant-name: Your Merchant Name
-  mobile-number: "012345678"
-  store-label: Your Store Label
 ```
 
 Or using `application.properties`:
@@ -73,10 +71,6 @@ Or using `application.properties`:
 bakong.base-url=https://api-bakong.nbc.gov.kh
 bakong.email=your_registered_email@example.com
 bakong.account-id=your_bakong_id@bank
-bakong.acquiring-bank=your_acquiring_bank_code
-bakong.merchant-name=Your Merchant Name
-bakong.mobile-number=012345678
-bakong.store-label=Your Store Label
 ```
 
 > ⚠️ **Security Warning:** Never commit real credentials to version control. Use environment variables or a secrets manager in production.
@@ -101,7 +95,7 @@ public class PaymentController {
         return bakongService.generateQR(request);
     }
 
-    // Step 2 — Get QR as PNG image
+    // Step 2 — Get QR as PNG image bytes
     @PostMapping("/qr-image")
     public ResponseEntity<byte[]> getQRImage(@RequestBody KHQRData qrData) {
         byte[] image = bakongService.getQRImage(qrData);
@@ -118,15 +112,111 @@ public class PaymentController {
 }
 ```
 
-### Payment Flow
+---
 
-```
-1. POST /generate-qr     → returns { qr, md5 }
-2. POST /qr-image        → returns PNG image (show to customer to scan)
-3. POST /check-transaction { md5 } → returns responseCode 0 (paid) or 1 (not yet paid)
+## BakongRequest Fields
+
+`BakongRequest` is flexible — only `amount` is required. All other fields are optional and fall back to sensible defaults if not provided.
+
+```java
+public record BakongRequest(
+        KHQRCurrency currency,                       // default: KHR
+        Double amount,                               // REQUIRED
+        String merchantName,                         // default: "DEFAULT MERCHANT"
+        String merchantCity,                         // default: "PHNOM PENH"
+        String merchantId,                           // default: "DEFAULT MERCHANT ID"
+        String acquiringBank,                        // default: "DEFAULT BANK"
+        String upiAccountInformation,               // default: "UPI123456"
+        Integer expirationTimestamp,                // default: 15 minutes
+        String billNumber,                           // default: "BILL123456"
+        String storeLabel,                           // default: "STORE"
+        String terminalLabel,                        // default: "TERMINAL1"
+        String mobileNumber,                         // default: "012345678"
+        String purposeOfTransaction,                // default: "Payment"
+        String merchantAlternateLanguagePreference, // default: "km"
+        String merchantNameAlternateLanguage,       // default: "អ្នកលក់"
+        String merchantCityAlternateLanguage        // default: "ភ្នំពេញ"
+)
 ```
 
-### Response — Generate QR
+### Field Reference
+
+| Field | Type | Required | Default | Description |
+|---|---|---|---|---|
+| `amount` | `Double` | ✅ Yes | — | Payment amount |
+| `currency` | `KHQRCurrency` | No | `KHR` | `KHR` or `USD` |
+| `merchantName` | `String` | No | `"DEFAULT MERCHANT"` | Merchant display name |
+| `merchantCity` | `String` | No | `"PHNOM PENH"` | Merchant city |
+| `merchantId` | `String` | No | `"DEFAULT MERCHANT ID"` | Merchant identifier |
+| `acquiringBank` | `String` | No | `"DEFAULT BANK"` | Bank code (e.g. `"ABA"`, `"ACLB"`) |
+| `billNumber` | `String` | No | `"BILL123456"` | Invoice or bill reference number |
+| `storeLabel` | `String` | No | `"STORE"` | Store label shown on QR |
+| `mobileNumber` | `String` | No | `"012345678"` | Merchant mobile number |
+| `terminalLabel` | `String` | No | `"TERMINAL1"` | Terminal identifier |
+| `purposeOfTransaction` | `String` | No | `"Payment"` | Payment description |
+| `expirationTimestamp` | `Integer` | No | `15` | QR validity in **minutes** |
+| `upiAccountInformation` | `String` | No | `"UPI123456"` | UPI account info |
+| `merchantAlternateLanguagePreference` | `String` | No | `"km"` | Alternate language code |
+| `merchantNameAlternateLanguage` | `String` | No | `"អ្នកលក់"` | Merchant name in Khmer |
+| `merchantCityAlternateLanguage` | `String` | No | `"ភ្នំពេញ"` | City name in Khmer |
+
+### Minimal Request (amount only)
+
+```json
+{
+    "amount": 1.50
+}
+```
+
+All other fields will use their default values.
+
+---
+
+## Payment Flow
+
+Follow these 3 steps in order to complete a payment:
+
+### Step 1 — Generate QR
+
+Only `amount` is required. All other fields have defaults.
+
+```http
+POST /generate-qr
+Content-Type: application/json
+
+{
+    "amount": 1.50,
+    "acquiringBank": "ABA"
+}
+```
+
+**Full example with all fields:**
+
+```http
+POST /generate-qr
+Content-Type: application/json
+
+{
+    "currency": "USD",
+    "amount": 5.00,
+    "merchantName": "My Coffee Shop",
+    "merchantCity": "SIEM REAP",
+    "merchantId": "SHOP001",
+    "acquiringBank": "ABA",
+    "billNumber": "INV-20240301",
+    "storeLabel": "Main Branch",
+    "mobileNumber": "012999888",
+    "terminalLabel": "Counter 1",
+    "purposeOfTransaction": "Coffee Payment",
+    "expirationTimestamp": 15,
+    "upiAccountInformation": "KH123456789",
+    "merchantAlternateLanguagePreference": "km",
+    "merchantNameAlternateLanguage": "ហាងកាហ្វេខ្ញុំ",
+    "merchantCityAlternateLanguage": "សៀមរាប"
+}
+```
+
+**Response:**
 
 ```json
 {
@@ -142,7 +232,42 @@ public class PaymentController {
 }
 ```
 
-### Response — Check Transaction
+Save the `qr` string and `md5` — you need both in the next steps.
+
+---
+
+### Step 2 — Get QR Image
+
+Pass the `data` object from Step 1 response to get a scannable PNG image:
+
+```http
+POST /qr-image
+Content-Type: application/json
+
+{
+    "qr": "0002010102121511KH12345678930360014bora_tong@aclb...",
+    "md5": "2e8787edaddc31ffe9c572923db06d33"
+}
+```
+
+**Response:** PNG image bytes (`image/png`) — display this to the customer to scan with the Bakong app.
+
+---
+
+### Step 3 — Check Transaction
+
+After the customer scans and pays, verify payment using the `md5` from Step 1:
+
+```http
+POST /check-transaction
+Content-Type: application/json
+
+{
+    "md5": "2e8787edaddc31ffe9c572923db06d33"
+}
+```
+
+**Response — Paid (`responseCode: 0`):**
 
 ```json
 {
@@ -153,7 +278,7 @@ public class PaymentController {
         "fromAccountId": "customer@bank",
         "toAccountId": "bora_tong@aclb",
         "currency": "USD",
-        "amount": 0.1,
+        "amount": 1.50,
         "createdDateMs": 1772125349000,
         "acknowledgedDateMs": 1772125351000,
         "externalRef": "100FT36931627892"
@@ -161,8 +286,21 @@ public class PaymentController {
 }
 ```
 
-> ✅ `responseCode: 0` — Payment confirmed
-> ❌ `responseCode: 1` — Not yet paid or MD5 is invalid
+**Response — Not Yet Paid (`responseCode: 1`):**
+
+```json
+{
+    "responseCode": 1,
+    "responseMessage": "Transaction could not be found. Please check and try again.",
+    "errorCode": 1,
+    "data": null
+}
+```
+
+| `responseCode` | Meaning |
+|---|---|
+| `0` | ✅ Payment confirmed — proceed with order |
+| `1` | ❌ Not yet paid or MD5 is invalid |
 
 ---
 
@@ -170,12 +308,12 @@ public class PaymentController {
 
 No need to manually copy or manage Bearer Tokens. This starter handles everything automatically:
 
-1. On first request, calls `/v1/renew_token` using your registered **email**
+1. On first request, calls `/v1/renew_token` using your configured `bakong.email`
 2. Decodes the returned **JWT** to read the real expiry time (`exp` claim)
-3. **Caches the token in memory** — reuses it on subsequent requests
+3. **Caches the token in memory** — reuses it on subsequent requests without hitting the API again
 4. Automatically **renews the token** when it expires
 
-You only need to provide your `bakong.email` in the config — nothing else.
+You only need to provide `bakong.email` in your config — nothing else.
 
 > 🔒 The token is stored in memory only (not on disk). It resets on application restart.
 
@@ -183,13 +321,23 @@ You only need to provide your `bakong.email` in the config — nothing else.
 
 ## QR Expiration
 
-This starter uses **KHQR SDK `1.0.0.16`** which supports QR code expiration — generated QR codes are valid for **15 minutes** by default:
+QR codes expire after **15 minutes by default**. After expiration, the customer must request a new QR code — this prevents stale codes from being scanned.
 
-```java
-merchantInfo.setExpirationTimestamp(System.currentTimeMillMillis() + 15 * 60 * 1000);
+You can customize the expiration per request using the `expirationTimestamp` field (value in **minutes**):
+
+```json
+{
+  "amount": 1.50,
+  "expirationTimestamp": 15
+}
 ```
 
-After expiration, the QR code becomes invalid and the customer must request a new one. This improves security by preventing stale QR codes from being scanned.
+| Value | Expiry |
+|---|---|
+| `5` | 5 minutes |
+| `15` | 15 minutes (default) |
+| `30` | 30 minutes |
+| `60` | 1 hour |
 
 ---
 
@@ -208,8 +356,8 @@ After expiration, the QR code becomes invalid and the customer must request a ne
 ## Notes
 
 - **Production Restriction:** The `check-transaction` endpoint can only be called from servers **located in Cambodia** in production. Calls from servers outside Cambodia will be blocked by Bakong.
-- **Currency:** The default currency is USD. Change `KHQRCurrency` in `MerchantInfo` to use KHR.
-- **Customization:** To override the default `BakongService` or `BakongTokenService` bean, simply declare your own `@Bean` — the starter uses `@ConditionalOnMissingBean` and will back off automatically.
+- **Currency:** Pass `"USD"` or `"KHR"` in the `currency` field. Defaults to `KHR` if not provided.
+- **Bean Override:** To customize behavior, declare your own `@Bean` of type `BakongService` or `BakongTokenService` — the starter uses `@ConditionalOnMissingBean` and will back off automatically.
 - **Branding Compliance:** When displaying KHQR in any customer-facing UI, always follow the official [KHQR Card Guideline](https://bakong.nbc.gov.kh/en/download/KHQR/guideline/KHQR%20Card%20Guideline.pdf).
 
 ---

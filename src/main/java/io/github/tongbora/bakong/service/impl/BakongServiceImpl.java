@@ -16,7 +16,6 @@ import io.github.tongbora.bakong.service.BakongService;
 import io.github.tongbora.bakong.service.BakongTokenService;
 import kh.gov.nbc.bakong_khqr.BakongKHQR;
 import kh.gov.nbc.bakong_khqr.model.*;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
 
@@ -25,7 +24,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-@Slf4j
 public class BakongServiceImpl implements BakongService {
 
     private final BakongTokenService bakongTokenService;
@@ -41,23 +39,32 @@ public class BakongServiceImpl implements BakongService {
     }
 
     @Override
-    public KHQRResponse<KHQRData> generateQR(BakongRequest request) {
+    public KHQRResponse<KHQRData> generateQR(BakongRequest bakongRequest) {
         MerchantInfo merchantInfo = new MerchantInfo();
-        merchantInfo.setExpirationTimestamp(System.currentTimeMillis() + 15 * 60 * 1000);
+
+        // Set expiration timestamp to current time + provided expiration or default to 15 minutes
+        // Bakong API expects expiration timestamp in milliseconds, so we convert minutes to milliseconds
+        // You just need to provide expiration in minutes, and we will handle the conversion and defaulting logic here
+        merchantInfo.setExpirationTimestamp(
+                System.currentTimeMillis() + bakongRequest.expirationTimestamp() * 60 * 1000
+        );
+
         merchantInfo.setBakongAccountId(properties.getAccountId());
-        merchantInfo.setMerchantId("123456");
-        merchantInfo.setAcquiringBank(properties.getAcquiringBank());
-        merchantInfo.setCurrency(KHQRCurrency.KHR);
-        merchantInfo.setAmount(request.amount());
-        merchantInfo.setMerchantName(properties.getMerchantName());
-        merchantInfo.setMerchantCity("PHNOM PENH");
-        merchantInfo.setBillNumber("#12345");
-        merchantInfo.setMobileNumber(properties.getMobileNumber());
-        merchantInfo.setStoreLabel(properties.getStoreLabel());
-        merchantInfo.setUpiAccountInformation("KH123456789");
-        merchantInfo.setMerchantAlternateLanguagePreference("km");
-        merchantInfo.setMerchantNameAlternateLanguage("តុងបូរា");
-        merchantInfo.setMerchantCityAlternateLanguage("ភ្នំពញ");
+        merchantInfo.setMerchantId(bakongRequest.merchantId());
+        merchantInfo.setAcquiringBank(bakongRequest.acquiringBank());
+        merchantInfo.setCurrency(bakongRequest.currency());
+        merchantInfo.setAmount(bakongRequest.amount());
+        merchantInfo.setMerchantName(bakongRequest.merchantName());
+        merchantInfo.setMerchantCity(bakongRequest.merchantCity());
+        merchantInfo.setBillNumber(bakongRequest.billNumber());
+        merchantInfo.setMobileNumber(bakongRequest.mobileNumber());
+        merchantInfo.setStoreLabel(bakongRequest.storeLabel());
+        merchantInfo.setUpiAccountInformation(bakongRequest.upiAccountInformation());
+        merchantInfo.setMerchantAlternateLanguagePreference(bakongRequest.merchantAlternateLanguagePreference());
+        merchantInfo.setMerchantNameAlternateLanguage(bakongRequest.merchantNameAlternateLanguage());
+        merchantInfo.setMerchantCityAlternateLanguage(bakongRequest.merchantCityAlternateLanguage());
+        merchantInfo.setPurposeOfTransaction(bakongRequest.purposeOfTransaction());
+        merchantInfo.setTerminalLabel(bakongRequest.terminalLabel());
         return BakongKHQR.generateMerchant(merchantInfo);
     }
 
@@ -67,7 +74,6 @@ public class BakongServiceImpl implements BakongService {
             if (qr == null || qr.getQr() == null || qr.getQr().isBlank()) {
                 return "Invalid QR data".getBytes(StandardCharsets.UTF_8);
             }
-
             QRCodeWriter qrCodeWriter = new QRCodeWriter();
             Map<EncodeHintType, Object> hints = new HashMap<>();
             hints.put(EncodeHintType.CHARACTER_SET, StandardCharsets.UTF_8.name());
@@ -98,9 +104,6 @@ public class BakongServiceImpl implements BakongService {
                 .body(Map.of("md5", request.md5()))
                 .retrieve()
                 .body(String.class);
-
-        log.info("Data response from Bakong API: {}", responseBody);
-
         try {
             return mapper.readValue(responseBody, BakongResponse.class);
         } catch (Exception e) {

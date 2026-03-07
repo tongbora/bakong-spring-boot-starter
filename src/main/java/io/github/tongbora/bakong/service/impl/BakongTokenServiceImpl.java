@@ -4,14 +4,13 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.tongbora.bakong.config.BakongProperties;
 import io.github.tongbora.bakong.service.BakongTokenService;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
 import org.springframework.web.client.RestClient;
 
 import java.time.Instant;
 import java.util.Map;
 
-@Slf4j
+
 public class BakongTokenServiceImpl implements BakongTokenService {
 
     private final RestClient restClient;
@@ -30,11 +29,8 @@ public class BakongTokenServiceImpl implements BakongTokenService {
     @Override
     public synchronized String getToken() {
         if (cachedToken != null && tokenExpiry != null && Instant.now().isBefore(tokenExpiry)) {
-            log.info("Using cached token");
             return cachedToken;
         }
-
-        log.info("Renewing token from Bakong");
 
         String url = properties.getBaseUrl().replaceAll("/+$", "") + "/v1/renew_token";
 
@@ -61,9 +57,6 @@ public class BakongTokenServiceImpl implements BakongTokenService {
 
             long exp = payloadNode.path("exp").asLong();
             tokenExpiry = Instant.ofEpochSecond(exp);
-
-            log.info("Obtained new token, expires at {}", tokenExpiry);
-
             return cachedToken;
 
         } catch (Exception e) {

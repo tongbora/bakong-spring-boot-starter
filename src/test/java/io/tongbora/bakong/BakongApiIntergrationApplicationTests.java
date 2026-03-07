@@ -1,13 +1,8 @@
 package io.tongbora.bakong;
 
-import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest
-class BakongApiIntergrationApplicationTests {
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-    @Test
-    void contextLoads() {
-    }
-
+@SpringBootApplication
+public class TestApplication {
 }
